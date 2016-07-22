@@ -4,8 +4,8 @@
 #
 # Author: Serg Kolo , contact: 1047481448@qq.com
 # Date: July 21, 2012
-# Purpose: Simple indicator of Caps, Num, and Scroll Lock
-#           keys for Ubuntu
+# Purpose: Indicator that displays power  
+#          consumption of  laptop battery
 #
 # Written for: http://askubuntu.com/q/801003/295286
 # Tested on: Ubuntu 16.04 LTS
