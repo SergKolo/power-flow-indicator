@@ -53,9 +53,10 @@ class LockKeyStatusIndicator(object):
             appindicator.IndicatorCategory.APPLICATION_STATUS)
 
         self.app.set_status(appindicator.IndicatorStatus.ACTIVE)
-        self.app.set_icon(os.path.join( os.getcwd(),"pwi_icon.png" ))
-        self.update_label()
+        self.icon_path = os.path.dirname( os.path.realpath(__file__) )
+        self.app.set_icon( os.path.join(self.icon_path,"pwi_icon.png"  ))
 
+        self.update_label()
         self.app_menu = gtk.Menu()
         self.quit_app = gtk.MenuItem('Quit')
         self.quit_app.connect('activate', self.quit)
