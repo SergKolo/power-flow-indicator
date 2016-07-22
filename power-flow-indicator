@@ -136,7 +136,7 @@ class LockKeyStatusIndicator(object):
         if on_battery:
             return energy_rate, str(current) + 'mA'
         else:
-            return 'on ac', 'None'
+            return 'on ac', 'on ac'
 
     def update_label(self):
 
