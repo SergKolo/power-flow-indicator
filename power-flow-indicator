@@ -43,12 +43,14 @@ import dbus
 import subprocess
 import argparse
 
+
 class LockKeyStatusIndicator(object):
-    def __init__(self,show_amps):
+
+    def __init__(self, show_amps):
         self.show_amps = show_amps
         self.app = appindicator.Indicator.new(
-                             'power-flow-indicator', "",
-                             appindicator.IndicatorCategory.APPLICATION_STATUS)
+            'power-flow-indicator', "",
+            appindicator.IndicatorCategory.APPLICATION_STATUS)
 
         self.app.set_status(appindicator.IndicatorStatus.ACTIVE)
 
@@ -118,11 +120,11 @@ class LockKeyStatusIndicator(object):
                 battery_path = line
                 break
         self.run_dbus_method('system', 'org.freedesktop.UPower',
-                             battery_path,'org.freedesktop.UPower.Device', 
+                             battery_path, 'org.freedesktop.UPower.Device',
                              'Refresh', 'None')
 
         for entry in self.run_cmd(
-                     ['upower', '-i', battery_path]).decode().split('\n'):
+                ['upower', '-i', battery_path]).decode().split('\n'):
             if 'state' in entry:
                 if entry.replace(" ", "").split(':')[1] == 'discharging':
                     on_battery = True
@@ -145,9 +147,9 @@ class LockKeyStatusIndicator(object):
         red_icon = os.path.join(cwd, 'red.png')
         green_icon = os.path.join(cwd, 'green.png')
         if self.show_amps:
-           label_text = self.get_power_info()[1]
+            label_text = self.get_power_info()[1]
         else:
-           label_text = self.get_power_info()[0]
+            label_text = self.get_power_info()[0]
 
         self.app.set_label(label_text, "")
         glib.timeout_add_seconds(1, self.set_app_label)
@@ -159,7 +161,8 @@ class LockKeyStatusIndicator(object):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--amps", help="display output in milliamps",action="store_true" )
+    parser.add_argument(
+        "--amps", help="display output in milliamps", action="store_true")
     args = parser.parse_args()
     indicator = LockKeyStatusIndicator(args.amps)
     indicator.run()
