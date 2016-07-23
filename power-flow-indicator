@@ -43,7 +43,6 @@ import dbus
 import subprocess
 import argparse
 
-
 class LockKeyStatusIndicator(object):
 
     def __init__(self, show_amps):
@@ -77,9 +76,11 @@ class LockKeyStatusIndicator(object):
         gtk.main_quit()
 
     def run_cmd(self, cmdlist):
-
+       
+        new_env = dict( os.environ ) 
+        new_env['LC_ALL'] = 'C' 
         try:
-            stdout = subprocess.check_output(cmdlist)
+            stdout = subprocess.check_output(cmdlist,env=new_env)
         except subprocess.CalledProcessError:
             pass
         else:
