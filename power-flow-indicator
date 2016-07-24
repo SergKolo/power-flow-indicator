@@ -131,7 +131,8 @@ class LockKeyStatusIndicator(object):
                 if entry.replace(" ", "").split(':')[1] == 'discharging':
                     on_battery = True
             if 'energy-rate' in entry:
-                energy_rate = entry.replace(" ", "").split(':')[1]
+                energy_rate = entry.replace(" ", "").split(':')[1][:-1]
+                print energy_rate
             if 'voltage' in entry:
                 voltage = entry.replace(" ", "").split(':')[1]
 
@@ -139,7 +140,7 @@ class LockKeyStatusIndicator(object):
             1000 * float(energy_rate[:-1]) / float(voltage[:-1]), 4)
 
         if on_battery:
-            return energy_rate, str(current) + 'mA'
+            return str(round(float(energy_rate),2)) + 'W', str(int(current)) + 'mA'
         else:
             return 'on ac', 'on ac'
 
