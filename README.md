@@ -10,7 +10,9 @@ Run from command line as `python power-flow-indicator` or add it to Startup Appl
 power-flow-indicator [-h] [--amps]
 
 optional arguments:
+
   -h, --help  show this help message and exit
+
   --amps      display output in milliamps
 
 
