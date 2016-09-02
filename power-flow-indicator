@@ -140,9 +140,11 @@ class LockKeyStatusIndicator(object):
                      return "Can't get battery info"
             if 'voltage' in entry:
                 voltage = entry.replace(" ", "").split(':')[1]
-
-        current = round(
-            1000 * float(energy_rate[:-1]) / float(voltage[:-1]), 4)
+        try:
+             current = (1000 * float(energy_rate[:-1]) / float(voltage[:-1]))
+             current = round(current,4)
+        except:
+             return "N/A"
 
         if on_battery:
             return str(round(float(energy_rate),2)) + 'W', str(int(current)) + 'mA'
