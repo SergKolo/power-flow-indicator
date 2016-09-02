@@ -122,9 +122,12 @@ class LockKeyStatusIndicator(object):
             if 'battery_BAT' in line:
                 battery_path = line
                 break
-        self.run_dbus_method('system', 'org.freedesktop.UPower',
-                             battery_path, 'org.freedesktop.UPower.Device',
-                             'Refresh', 'None')
+
+        self.run_dbus_method(
+                    'system', 'org.freedesktop.UPower',
+                    battery_path, 'org.freedesktop.UPower.Device',
+                    'Refresh', 'None'
+                    )
 
         for entry in self.run_cmd(
                 ['upower', '-i', battery_path]).decode().split('\n'):
@@ -133,7 +136,8 @@ class LockKeyStatusIndicator(object):
                     on_battery = True
             if 'energy-rate' in entry:
                 energy_rate = entry.replace(" ", "").split(':')[1][:-1]
-                print energy_rate
+                if not energy_rate or energy_rate == "0":
+                     return "Can't get battery info"
             if 'voltage' in entry:
                 voltage = entry.replace(" ", "").split(':')[1]
 
@@ -146,10 +150,7 @@ class LockKeyStatusIndicator(object):
             return 'on ac', 'on ac'
 
     def update_label(self):
-
-        cwd = os.getcwd()
-        red_icon = os.path.join(cwd, 'red.png')
-        green_icon = os.path.join(cwd, 'green.png')
+        
         if self.show_amps:
             label_text = self.get_power_info()[1]
         else:
