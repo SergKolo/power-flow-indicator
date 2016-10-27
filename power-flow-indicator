@@ -34,85 +34,73 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+
 import gi
+
 gi.require_version('AppIndicator3', '0.1')
 from gi.repository import GLib as glib
 from gi.repository import AppIndicator3 as appindicator
 from gi.repository import Gtk as gtk
+
 import os
 import dbus
 import subprocess
 import argparse
 
-class LockKeyStatusIndicator(object):
+
+class PowerFlowIndicator(object):
 
     def __init__(self, show_amps):
         self.show_amps = show_amps
-        self.app = appindicator.Indicator.new(
-            'power-flow-indicator', "",
-            appindicator.IndicatorCategory.APPLICATION_STATUS)
+        self.icon_path = os.path.dirname(os.path.realpath(__file__))
 
+        self.app = appindicator.Indicator.new('power-flow-indicator', "",
+                                              appindicator.IndicatorCategory.APPLICATION_STATUS)
         self.app.set_status(appindicator.IndicatorStatus.ACTIVE)
-        self.icon_path = os.path.dirname( os.path.realpath(__file__) )
-        self.app.set_icon( os.path.join(self.icon_path,"pwi_icon.png"  ))
+        self.app.set_icon(os.path.join(self.icon_path, "pwi_icon.png"))
 
-        self.update_label()
         self.app_menu = gtk.Menu()
-        self.quit_app = gtk.MenuItem('Quit')
-        self.quit_app.connect('activate', self.quit)
-        self.quit_app.show()
-        self.app_menu.append(self.quit_app)
-
+        self.app_menu_quit = gtk.MenuItem('Quit')
+        self.app_menu_quit.connect('activate', self.quit)
+        self.app_menu_quit.show()
+        self.app_menu.append(self.app_menu_quit)
         self.app.set_menu(self.app_menu)
 
-    def run(self):
+        self.update_label()
 
+    def run(self):
         try:
             gtk.main()
         except KeyboardInterrupt:
             pass
 
     def quit(self, data=None):
-
         gtk.main_quit()
 
     def run_cmd(self, cmdlist):
-       
-        new_env = dict( os.environ ) 
-        new_env['LC_ALL'] = 'C' 
+        new_env = dict(os.environ)
+        new_env['LC_ALL'] = 'C'
         try:
-            stdout = subprocess.check_output(cmdlist,env=new_env)
+            stdout = subprocess.check_output(cmdlist, env=new_env)
         except subprocess.CalledProcessError:
-            pass
-        else:
-            if stdout:
-                return stdout
+            stdout = ""
+        return stdout
 
     def run_dbus_method(self, bus_type, obj, path, interface, method, arg):
-
         if bus_type == "session":
-
             bus = dbus.SessionBus()
-
-        if bus_type == "system":
-
+        elif bus_type == "system":
             bus = dbus.SystemBus()
+        else:
+            return None
 
         proxy = bus.get_object(obj, path)
-        method = proxy.get_dbus_method(method, interface)
+        dbus_method = proxy.get_dbus_method(method, interface)
 
-        if arg:
-
-            return method(arg)
-
-        else:
-
-            return method()
+        return dbus_method(arg) if arg else dbus_method()
 
     def get_power_info(self):
-
         battery_path = None
-        battery_info = []
         energy_rate = None
         voltage = None
         current = None
@@ -123,47 +111,36 @@ class LockKeyStatusIndicator(object):
                 battery_path = line
                 break
 
-        self.run_dbus_method(
-                    'system', 'org.freedesktop.UPower',
-                    battery_path, 'org.freedesktop.UPower.Device',
-                    'Refresh', 'None'
-                    )
+        self.run_dbus_method('system', 'org.freedesktop.UPower', battery_path,
+                             'org.freedesktop.UPower.Device', 'Refresh', 'None')
 
-        for entry in self.run_cmd(
-                ['upower', '-i', battery_path]).decode().split('\n'):
-            if 'state' in entry:
-                if entry.replace(" ", "").split(':')[1] == 'discharging':
-                    on_battery = True
+        for entry in self.run_cmd(['upower', '-i', battery_path]).decode().split('\n'):
+            if 'state' in entry and entry.split(':')[1].strip() == 'discharging':
+                on_battery = True
             if 'energy-rate' in entry:
-                energy_rate = entry.replace(" ", "").split(':')[1][:-1]
+                energy_rate = entry.split(':')[1].strip().split()[0]
                 if not energy_rate or energy_rate == "0":
-                     return "Can't get battery info"
+                    return "Can't get battery info"
             if 'voltage' in entry:
-                voltage = entry.replace(" ", "").split(':')[1]
+                voltage = entry.split(':')[1].strip().split()[0]
         try:
-             current = (1000 * float(energy_rate[:-1]) / float(voltage[:-1]))
-             current = round(current,4)
-        except:
-             return "N/A"
+            current = round(1000 * float(energy_rate) / float(voltage), 4)
+        except (ValueError, ZeroDivisionError):
+            return "N/A"
 
         if on_battery:
-            return str(round(float(energy_rate),2)) + 'W', str(int(current)) + 'mA'
+            return str(round(float(energy_rate), 2)) + 'W', str(int(current)) + 'mA'
         else:
             return 'on ac', 'on ac'
 
     def update_label(self):
-        
         if self.show_amps:
             label_text = self.get_power_info()[1]
         else:
             label_text = self.get_power_info()[0]
 
-        self.app.set_label(label_text, "")
-        glib.timeout_add_seconds(1, self.set_app_label)
-
-    def set_app_label(self):
-
-        self.update_label()
+        self.app.set_label("<"+label_text+">", "")
+        glib.timeout_add_seconds(1, self.update_label)
 
 
 def main():
@@ -171,8 +148,9 @@ def main():
     parser.add_argument(
         "--amps", help="display output in milliamps", action="store_true")
     args = parser.parse_args()
-    indicator = LockKeyStatusIndicator(args.amps)
+    indicator = PowerFlowIndicator(args.amps)
     indicator.run()
+
 
 if __name__ == '__main__':
     main()
