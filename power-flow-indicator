@@ -53,10 +53,9 @@ class PowerFlowIndicator(object):
     def __init__(self, label_format):
         self.label_format = label_format
         self.icon_path = os.path.dirname(os.path.realpath(__file__))
-
-        self.app = appindicator.Indicator.new(
-            'power-flow-indicator', "",
-            appindicator.IndicatorCategory.APPLICATION_STATUS)
+        category = appindicator.IndicatorCategory.APPLICATION_STATUS
+        init_info = ['power-flow-indicator', "", category]
+        self.app = appindicator.Indicator.new(*init_info)
         self.app.set_status(appindicator.IndicatorStatus.ACTIVE)
         self.app.set_icon(os.path.join(self.icon_path, "pwi_icon.png"))
 
@@ -112,14 +111,15 @@ class PowerFlowIndicator(object):
                 battery_path = line
                 break
 
-        self.run_dbus_method('system', 'org.freedesktop.UPower', battery_path,
-                             'org.freedesktop.UPower.Device', 'Refresh', 'None')
+        self.run_dbus_method('system', 'org.freedesktop.UPower',
+                             battery_path, 'org.freedesktop.UPower.Device',
+                             'Refresh', 'None')
 
-        for entry in self.run_cmd(
-                ['upower', '-i', battery_path]).decode().split('\n'):
-            if 'state' in entry and \
-                            entry.split(':')[1].strip() == 'discharging':
-                on_battery = True
+        entries = self.run_cmd(['upower', '-i', battery_path])
+        for entry in entries.decode().split('\n'):
+            if ('state' in entry and
+                entry.split(':')[1].strip() == 'discharging'):
+                    on_battery = True
             if 'energy-rate' in entry:
                 energy_rate = entry.split(':')[1].strip().split()[0]
                 if not energy_rate or energy_rate == "0":
@@ -135,7 +135,6 @@ class PowerFlowIndicator(object):
             return {"W": float(energy_rate), "mA": current, "A": current / 1000}
         else:
             return "on AC"
-
     def update_label(self):
         info = self.get_power_info()
 
