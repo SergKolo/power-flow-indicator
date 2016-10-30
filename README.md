@@ -51,10 +51,20 @@ It is convenient to add it to your *Startup Applications* so that it will launch
 
 ### Advanced command syntax
     
-    power-flow-indicator [-h] [--amps]
+    usage: power-flow-indicator [-h] [-W | -A | -a | -f FORMAT]
     
     optional arguments:
+      -h, --help            show this help message and exit
+      -W, --Watt            display power in Watt (W) with 2 decimals
+      -A, --Ampere          display current in Ampere (A) with 3 decimals
+      -a, --Milliampere     display current in Milliampere (mA)
+      -f FORMAT, --format FORMAT
+                            custom display format - see below...
     
-      -h, --help  show this help message and exit
-    
-      --amps      display output in milliamps
+    FORMAT syntax:
+        Use Python's "str.format()" syntax with named parameters.
+        It looks basically like this:  {<NAME>:.<DECIMALS>f}
+        <NAME> can be one of "W", "A" and "mA" and specifies the value you want.
+        <DECIMALS> allows you to specify the number of decimals displayed.
+        Here are the format strings of the default display options as example:
+        -W :  "{W:.2f} W" ,    -A :  "{A:.3f} A" ,    -a :  "{mA:.0f} mA" 
