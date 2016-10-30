@@ -46,6 +46,7 @@ import os
 import dbus
 import subprocess
 import argparse
+import signal
 
 
 class PowerFlowIndicator(object):
@@ -174,6 +175,10 @@ def main():
     args = parser.parse_args()
 
     indicator = PowerFlowIndicator(args.format_str)
+
+    signal.signal(signal.SIGINT,
+                  lambda sig, frame: indicator.quit())
+
     indicator.run()
 
 
