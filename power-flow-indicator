@@ -49,13 +49,13 @@ import argparse
 
 
 class PowerFlowIndicator(object):
-
-    def __init__(self, show_amps):
-        self.show_amps = show_amps
+    def __init__(self, label_format):
+        self.label_format = label_format
         self.icon_path = os.path.dirname(os.path.realpath(__file__))
 
-        self.app = appindicator.Indicator.new('power-flow-indicator', "",
-                                              appindicator.IndicatorCategory.APPLICATION_STATUS)
+        self.app = appindicator.Indicator.new(
+            'power-flow-indicator', "",
+            appindicator.IndicatorCategory.APPLICATION_STATUS)
         self.app.set_status(appindicator.IndicatorStatus.ACTIVE)
         self.app.set_icon(os.path.join(self.icon_path, "pwi_icon.png"))
 
@@ -114,8 +114,10 @@ class PowerFlowIndicator(object):
         self.run_dbus_method('system', 'org.freedesktop.UPower', battery_path,
                              'org.freedesktop.UPower.Device', 'Refresh', 'None')
 
-        for entry in self.run_cmd(['upower', '-i', battery_path]).decode().split('\n'):
-            if 'state' in entry and entry.split(':')[1].strip() == 'discharging':
+        for entry in self.run_cmd(
+                ['upower', '-i', battery_path]).decode().split('\n'):
+            if 'state' in entry and \
+                            entry.split(':')[1].strip() == 'discharging':
                 on_battery = True
             if 'energy-rate' in entry:
                 energy_rate = entry.split(':')[1].strip().split()[0]
@@ -129,26 +131,49 @@ class PowerFlowIndicator(object):
             return "N/A"
 
         if on_battery:
-            return str(round(float(energy_rate), 2)) + 'W', str(int(current)) + 'mA'
+            return {"W": float(energy_rate), "mA": current, "A": current / 1000}
         else:
-            return 'on ac', 'on ac'
+            return "on AC"
 
     def update_label(self):
-        if self.show_amps:
-            label_text = self.get_power_info()[1]
-        else:
-            label_text = self.get_power_info()[0]
+        info = self.get_power_info()
 
-        self.app.set_label("<"+label_text+">", "")
+        if isinstance(info, str):
+            label_text = info
+        else:
+            label_text = self.label_format.format(**info)
+
+        self.app.set_label(label_text, "")
         glib.timeout_add_seconds(1, self.update_label)
 
 
 def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--amps", help="display output in milliamps", action="store_true")
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.RawDescriptionHelpFormatter)
+    pgroup = parser.add_mutually_exclusive_group()
+    pgroup.set_defaults(format_str="{W:.2f} W")
+    pgroup.add_argument("-W", "--Watt", dest="format_str",
+                        action="store_const", const="{W:.2f} W",
+                        help="display power in Watt (W) with 2 decimals")
+    pgroup.add_argument("-A", "--Ampere", dest="format_str",
+                        action="store_const", const="{A:.3f} A",
+                        help="display current in Ampere (A) with 3 decimals")
+    pgroup.add_argument("-a", "--Milliampere", dest="format_str",
+                        action="store_const", const="{mA:.0f} mA",
+                        help="display current in Milliampere (mA)")
+    pgroup.add_argument("-f", "--format", dest="format_str",
+                        action="store", metavar="FORMAT",
+                        help="custom display format - see below...")
+    parser.epilog = """FORMAT syntax:
+    Use Python's "str.format()" syntax with named parameters.
+    It looks basically like this:  {<NAME>:.<DECIMALS>f}
+    <NAME> can be one of "W", "A" and "mA" and specifies the value you want.
+    <DECIMALS> allows you to specify the number of decimals displayed.
+    Here are the format strings of the default display options as example:
+    -W :  "{W:.2f} W" ,    -A :  "{A:.3f} A" ,    -a :  "{mA:.0f} mA" """
     args = parser.parse_args()
-    indicator = PowerFlowIndicator(args.amps)
+
+    indicator = PowerFlowIndicator(args.format_str)
     indicator.run()
 
 
