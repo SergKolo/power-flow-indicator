@@ -1,3 +1,6 @@
+If you like software in this repository, please consider making a donation to support the developer
+[![paypalbutton](https://www.paypal.com/en_US/i/btn/btn_donate_LG.gif)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=CB9L72S9LEF66)
+
 # power-flow-indicator
 
 **Indicator that displays electric current and/or power consumption of the laptop battery.**
@@ -68,3 +71,4 @@ It is convenient to add it to your *Startup Applications* so that it will launch
         <DECIMALS> allows you to specify the number of decimals displayed.
         Here are the format strings of the default display options as example:
         -W :  "{W:.2f} W" ,    -A :  "{A:.3f} A" ,    -a :  "{mA:.0f} mA" 
+
